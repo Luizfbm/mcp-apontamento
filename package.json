@@ -1,0 +1,25 @@
+{
+  "name": "mcp-apontamento",
+  "version": "1.0.0",
+  "description": "Servidor MCP local para consultar agendas e lançar apontamentos no Portal PVT",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "bin": { "mcp-apontamento": "./dist/cli.js" },
+  "files": ["dist", "README.md", "AGENTS.md", "CLAUDE.md", "docs/contrato-portal.md"],
+  "scripts": {
+    "build": "node scripts/clean-dist.mjs && tsc -p tsconfig.build.json && node scripts/check-dist.mjs --write",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "@napi-rs/keyring": "2.1.2",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.17",
+    "tsx": "4.23.12",
+    "typescript": "5.9.3",
+    "vitest": "2.1.9"
+  }
+}
