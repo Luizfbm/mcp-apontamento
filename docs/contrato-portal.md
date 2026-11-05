@@ -74,11 +74,16 @@ DELETE /api/mcp/token          (revoga o próprio token; usado pelo comando logo
 
 GET /api/mcp/pendentes?data_inicio=2026-10-01&data_fim=2026-11-03
     (agendas do próprio analista, no período, que ainda não têm apontamento;
-     mesma fonte do card de apontamentos pendentes da home; padrão: últimos 30 dias até hoje)
+     mesma fonte do card de apontamentos pendentes da home; padrão: últimos 30 dias até hoje; período máximo 45 dias)
 200: { "pendentes": [ { "id_agenda": "244661", "data": "2026-10-28", "id_projeto": "2250", "projeto": "Implantação RM",
-                        "cliente": "ACME", "coordenador": "Fulano", "horas_agendadas": "08:00" } ] }
+                        "cliente": "", "coordenador": "Fulano", "horas_agendadas": "08:00",
+                        "id_tarefa": "28162", "tarefa": "Parametrização" } ] }
 200 sem pendências: { "pendentes": [] }
+400 período inválido: { "message": "..." }
 ```
+
+- `cliente` vem vazio na v1 (a sentença de pendentes não traz o cliente).
+- `horas_agendadas` vem vazio quando a agenda não aparece na API050 do período.
 
 ## 4. Rotas existentes que passam a aceitar o Bearer
 
@@ -125,6 +130,13 @@ Token ausente, inválido, expirado, revogado, ou sessão do RM que não renova m
 ```
 
 O MCP, ao receber `code: "mcp_token_invalid"`, descarta o token guardado e refaz a autorização no navegador.
+
+Falha passageira do RM não invalida o token (o MCP mantém o token e só repassa o erro):
+
+```
+503 { "message": "RM indisponível, tente de novo em instantes." }   (renovação da sessão do RM falhou por rede/5xx/timeout)
+502 { "message": "Falha ao consultar o RM." }                        (/api/mcp/me e /api/mcp/pendentes)
+```
 
 ## 6. Gestão pelo analista (cookie de sessão web; tela do Portal)
 
