@@ -77,9 +77,14 @@ export class HttpPortalClient {
         const data = await this.json('/api/mcp/me');
         return { username: s(data.username), nome: s(data.nome), codcfo: s(data.codcfo), expires_at: s(data.expires_at) };
     }
+    async meuCodcfo() {
+        const { codcfo } = await this.me();
+        if (!codcfo)
+            throw new Error('Seu usuário não está vinculado a um analista (CFO) no RM. Peça o vínculo ao administrativo.');
+        return codcfo;
+    }
     async agendas(dataInicio, dataFim) {
-        const me = await this.me();
-        return this.projectsByDate(me.codcfo, dataInicio, dataFim);
+        return this.projectsByDate(await this.meuCodcfo(), dataInicio, dataFim);
     }
     async projectsByDate(codcfo, dataInicio, dataFim) {
         const query = new URLSearchParams({ codcfo, startDate: dataInicio, endDate: dataFim });
@@ -92,15 +97,13 @@ export class HttpPortalClient {
         const cached = this.agendaCache.get(`${idAgenda}:${dataAgenda}`);
         if (cached)
             return cached;
-        const me = await this.me();
-        const found = (await this.projectsByDate(me.codcfo, dataAgenda, dataAgenda)).find((item) => item.id_agenda === idAgenda);
+        const found = (await this.projectsByDate(await this.meuCodcfo(), dataAgenda, dataAgenda)).find((item) => item.id_agenda === idAgenda);
         if (found)
             return found;
         throw new Error(`A agenda ${idAgenda} não existe em ${dataAgenda} para você; consulte minhas_agendas`);
     }
     async atividades(idAgenda) {
-        const me = await this.me();
-        const query = new URLSearchParams({ idagenda: idAgenda, codcfo: me.codcfo });
+        const query = new URLSearchParams({ idagenda: idAgenda, codcfo: await this.meuCodcfo() });
         const rows = await this.json(`/api/apontador/atividades-agenda?${query}`);
         return Array.isArray(rows) ? rows.map((row) => ({ id_tarefa: s(row.IDATIVIDADE ?? row.IDTAREFA ?? row.ID ?? row.id_tarefa), nome: s(row.ATIVIDADE ?? row.TAREFA ?? row.NOME ?? row.DESCRICAO ?? row.nome), codigo: s(row.CODATIVIDADE ?? row.CODTAREFA ?? row.CODIGO ?? row.codigo) })) : [];
     }

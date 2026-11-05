@@ -131,6 +131,20 @@ describe('servidor MCP com Portal HTTP falso', () => {
     expect(query.get('endDate')).toBe('2026-10-28');
   });
 
+  it('usuário sem CFO recebe mensagem clara e o Portal não é consultado com codcfo vazio', async () => {
+    const ctx = await connectedServer((req) => {
+      if (req.url?.startsWith('/api/mcp/me')) return { body: { ...user, codcfo: '' } };
+      return { body: [] };
+    });
+    closeCurrent = ctx.close;
+    for (const [name, args] of [['minhas_agendas', {}], ['atividades_da_agenda', { id_agenda: '42' }]] as const) {
+      const result = await ctx.client.callTool({ name, arguments: args });
+      expect(result.isError).toBe(true);
+      expect(JSON.stringify(result.content)).toContain('Seu usuário não está vinculado a um analista (CFO) no RM.');
+    }
+    expect(ctx.fake.requests.filter((request) => !request.url.startsWith('/api/mcp/me'))).toHaveLength(0);
+  });
+
   it('se elicitation falhar, a chamada sem confirmar fica pendente e confirmar:true grava sem repetir elicitation', async () => {
     let posts = 0;
     const ctx = await connectedServer((req) => {
